@@ -10,11 +10,11 @@ public class ResponseDto<T> {
   private T data;
   private Error error;
 
-  public static <T> ResponseDto<T> success(T data) {
+  public static <T> ResponseDto<T> success(T data) { // 제네릭스
     return new ResponseDto<>(true, data, null);
   }
 
-  public static <T> ResponseDto<T> fail(String code, String message) {
+  public static <T> ResponseDto<T> fail(String code, String message) { // 제네릭스
     return new ResponseDto<>(false, null, new Error(code, message));
   }
 

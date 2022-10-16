@@ -23,7 +23,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Optional;
 
-@Slf4j
+@Slf4j // slf5j 를 사용하여 설정에 따라 다른 로깅 라이브러리를 사용할 수 있게 된다.
 @Component
 public class TokenProvider {
 
@@ -33,30 +33,39 @@ public class TokenProvider {
   private static final long REFRESH_TOKEN_EXPRIRE_TIME = 1000 * 60 * 60 * 24 * 7;     //7일
 
   private final Key key;
-
   private final RefreshTokenRepository refreshTokenRepository;
 
+  /**
+   * TokenProvider
+   * @param secretKey
+   * @param refreshTokenRepository
+   */
   public TokenProvider(@Value("${jwt.secret}") String secretKey,
       RefreshTokenRepository refreshTokenRepository) {
     this.refreshTokenRepository = refreshTokenRepository;
-    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+    byte[] keyBytes = Decoders.BASE64.decode(secretKey); // BASE64 시크릿키 디코드
     this.key = Keys.hmacShaKeyFor(keyBytes);
   }
 
+  /**
+   * 토큰 생성 dto
+   * @param member
+   * @return
+   */
   public TokenDto generateTokenDto(Member member) {
-    long now = (new Date().getTime());
+    long now = (new Date().getTime());  // 현재 시간 셋팅
 
-    Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
+    Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME); // 엑세스 토큰 만료시간 셋팅( 현재시간 + 만료시간)
     String accessToken = Jwts.builder()
-        .setSubject(member.getNickname())
-        .claim(AUTHORITIES_KEY, Authority.ROLE_MEMBER.toString())
-        .setExpiration(accessTokenExpiresIn)
-        .signWith(key, SignatureAlgorithm.HS256)
+        .setSubject(member.getNickname())  // member에서 가저온 nickname값 넣고
+        .claim(AUTHORITIES_KEY, Authority.ROLE_MEMBER.toString()) // 권한 넣고
+        .setExpiration(accessTokenExpiresIn) // 엑세스 토큰 만료 시간 셋팅 값 넣고
+        .signWith(key, SignatureAlgorithm.HS256) // 전자서명(SignatureAlgorithm) 넣고
         .compact();
 
     String refreshToken = Jwts.builder()
-        .setExpiration(new Date(now + REFRESH_TOKEN_EXPRIRE_TIME))
-        .signWith(key, SignatureAlgorithm.HS256)
+        .setExpiration(new Date(now + REFRESH_TOKEN_EXPRIRE_TIME))  // 리프레시 토큰 만료시간 셋팅
+        .signWith(key, SignatureAlgorithm.HS256)  // 시그니처 알고리즘
         .compact();
 
     RefreshToken refreshTokenObject = RefreshToken.builder()
@@ -73,7 +82,6 @@ public class TokenProvider {
         .accessTokenExpiresIn(accessTokenExpiresIn.getTime())
         .refreshToken(refreshToken)
         .build();
-
   }
 
 
@@ -86,6 +94,11 @@ public class TokenProvider {
     return ((UserDetailsImpl) authentication.getPrincipal()).getMember();
   }
 
+  /**
+   * jwt토큰 유효성 검사
+   * @param token
+   * @return
+   */
   public boolean validateToken(String token) {
     try {
       Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
@@ -109,14 +122,20 @@ public class TokenProvider {
     return optionalRefreshToken.orElse(null);
   }
 
+  /**
+   * DeleteRefreshToken
+   * @param member
+   * @return
+   */
   @Transactional
   public ResponseDto<?> deleteRefreshToken(Member member) {
     RefreshToken refreshToken = isPresentRefreshToken(member);
-    if (null == refreshToken) {
+    if (null == refreshToken) { // refreshToken이 null일경우, "TOKEN_NOT_FOUND", "존재하지 않는 Token입니다" ResponseDto로 리턴
       return ResponseDto.fail("TOKEN_NOT_FOUND", "존재하지 않는 Token 입니다.");
     }
 
     refreshTokenRepository.delete(refreshToken);
-    return ResponseDto.success("success");
+    return ResponseDto.success("success"); // refreshTokenRepository에서 delete메소드로 refreshToken을 삭제하면 ,
+                                                 // "success" ResponseDto로 리턴
   }
 }

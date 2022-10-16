@@ -1,5 +1,6 @@
 package com.example.sa_advanced.controller.request;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,7 @@ import javax.validation.constraints.NotBlank;
  */
 @Getter
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class LoginRequestDto {
 
     @NotBlank
